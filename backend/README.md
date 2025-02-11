@@ -80,5 +80,3 @@ Backend
 Nest.js
 DB
 CockroachDB
-
-Geminiで生成されたソースで作っています

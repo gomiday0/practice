@@ -1,45 +1,32 @@
 import { Injectable } from '@nestjs/common';
 import * as fs from 'fs';
 import * as path from 'path';
-import { parse, HTMLElement } from 'node-html-parser'; // HTMLElementを追加
+import { parse, HTMLElement } from 'node-html-parser';
 import { PrismaService } from '../prisma.service';
 import { SongData } from './types/song-data';
+import { extractTypeFromHtml } from './utils'; // utils.ts からインポート
 
 @Injectable()
 export class DataService {
   constructor(private prisma: PrismaService) {}
 
-  private extractTypeFromHTML(html: string): string {
-    const root = parse(html);
-    const selectedType = root.querySelector('.skill_select .select_true');
-    return selectedType?.classNames.includes('hot') ? 'hot' : 'other';
-  }
-
   async getData(type: 'old' | 'new'): Promise<SongData[]> {
     const filePath = path.join(__dirname, `../../../../data/${type}.html`);
-    console.log('filePath:', filePath); // ファイルパスを確認
-
     const html = fs.readFileSync(filePath, 'utf-8');
-    console.log('html:', html); // HTML が読み込めているか確認
 
     const root = parse(html);
-    console.log('root:', root); // パース結果を確認
-
     const tableRows = root.querySelectorAll('.skill_table_tb tbody tr');
-    console.log('tableRows:', tableRows); // 行が取得できているか確認
 
-    const extractedType = this.extractTypeFromHTML(html);
-    console.log('extractedType:', extractedType); // タイプが取得できているか確認
+    //  utils.ts の関数を使用
+    const extractedType = extractTypeFromHtml(html);
 
     return tableRows.map((row: HTMLElement) => {
-      // 型注釈を追加
       const title =
         row.querySelector('.title .text_link')?.textContent?.trim() || '';
       const difficultyElement = row.querySelector(
         '.music_seq_box .seq_icon:nth-child(2)',
       );
 
-      // difficultyClassは文字列であり、splitとfindを使って書き直す
       const difficultyClass = difficultyElement?.classNames
         .split(' ')
         .find((className: string) => className.startsWith('diff_'));
@@ -56,7 +43,7 @@ export class DataService {
         difficulty,
         achievementRate,
         skill,
-        type: extractedType,
+        type: extractedType, //  ここで使用
       };
     });
   }
